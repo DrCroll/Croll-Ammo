@@ -1,4 +1,4 @@
-## Croll-Ammo - discord.gg/DBqCZjZ8VN
+## Croll-Ammo - https://discord.gg/DBqCZjZ8VN
 
 Server-authoritative ammo box unpacking for FiveM (Qbox, QB-Core, ESX, and custom adapters).
 
