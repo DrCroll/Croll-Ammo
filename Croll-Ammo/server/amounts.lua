@@ -1,70 +1,71 @@
 --[[
-	Croll-Ammo server catalog (server-side only).
-	Define and validate ammo box reward amounts here.
+    Croll-Ammo -- catalog validation (server-side only).
+    Validates Config.AmmoBoxes entries defined in config.lua.
 ]]
 
----@return table<string, { rewards: table<string, number>, notifyPhrase?: string }>
-local function buildAmmoBoxCatalog()
-	local raw = {
-		['ammo_rifle'] = { rewards = { ['ammo-rifle'] = 30 }, notifyPhrase = 'your 5.56x45 box' },
-		['ammo-22box'] = { rewards = { ['ammo-22'] = 50 }, notifyPhrase = 'your .22 LR box' },
-		['ammo-38box'] = { rewards = { ['ammo-38'] = 50 }, notifyPhrase = 'your .38 LC box' },
-		['ammo-44box'] = { rewards = { ['ammo-44'] = 50 }, notifyPhrase = 'your .44 Magnum box' },
-		['ammo-45box'] = { rewards = { ['ammo-45'] = 50 }, notifyPhrase = 'your .45 ACP box' },
-		['ammo-50box'] = { rewards = { ['ammo-50'] = 20 }, notifyPhrase = 'your .50 AE box' },
-		['ammo_pistol'] = { rewards = { ['ammo-9'] = 50 }, notifyPhrase = 'your 9mm box' },
-		['ammo_rifle2'] = { rewards = { ['ammo-rifle2'] = 30 }, notifyPhrase = 'your 7.62x39 box' },
-		['ammo_shotgun'] = { rewards = { ['ammo-shotgun'] = 25 }, notifyPhrase = 'your 12 gauge box' },
-		['ammo_shotgun_pd'] = { rewards = { ['ammo-justices'] = 25 }, notifyPhrase = 'your 12 gauge Justice box' },
-		['ammo_rifle_pd'] = { rewards = { ['ammo-justicea'] = 30 }, notifyPhrase = 'your 5.56x45 Justice box' },
-		['ammo_pistol_pd'] = { rewards = { ['ammo-justicep'] = 50 }, notifyPhrase = 'your 9mm Justice box' },
-	}
-
-	local out = {}
-	for boxName, def in pairs(raw) do
-		if type(boxName) ~= 'string' or boxName == '' then
-			error('[Croll-Ammo] Invalid box key in server catalog.')
-		end
-		if type(def) ~= 'table' or type(def.rewards) ~= 'table' or not next(def.rewards) then
-			error(('[Croll-Ammo] Box "%s" must define a non-empty rewards table.'):format(boxName))
-		end
-
-		local rewards = {}
-		for ammoName, amount in pairs(def.rewards) do
-			local n = math.floor(tonumber(amount) or -1)
-			if type(ammoName) ~= 'string' or ammoName == '' or n < 1 or n > 10000 then
-				error(('[Croll-Ammo] Invalid reward in box "%s": ammo=%s amount=%s'):format(
-					boxName,
-					tostring(ammoName),
-					tostring(amount)
-				))
-			end
-			rewards[ammoName] = n
-		end
-
-		local phrase = def.notifyPhrase
-		if phrase ~= nil and type(phrase) ~= 'string' then
-			error(('[Croll-Ammo] notifyPhrase for box "%s" must be a string.'):format(boxName))
-		end
-
-		out[boxName] = {
-			rewards = rewards,
-			notifyPhrase = phrase,
-		}
-	end
-
-	return out
-end
-
 function LoadServerAmmoCatalog()
-	Config.AmmoBoxes = {}
-	Config.BoxLabels = {}
+    Config.BoxLabels = {}
 
-	local catalog = buildAmmoBoxCatalog()
-	for itemName, def in pairs(catalog) do
-		Config.AmmoBoxes[itemName] = def.rewards
-		if def.notifyPhrase and def.notifyPhrase ~= '' then
-			Config.BoxLabels[itemName] = def.notifyPhrase
-		end
-	end
+    if type(Config.AmmoBoxes) ~= 'table' then
+        error('[Croll-Ammo] Config.AmmoBoxes must be a table.')
+    end
+
+    for boxName, def in pairs(Config.AmmoBoxes) do
+        if type(boxName) ~= 'string' or boxName == '' then
+            error('[Croll-Ammo] Invalid box key in Config.AmmoBoxes.')
+        end
+        if type(def) ~= 'table' or type(def.rewards) ~= 'table' or not next(def.rewards) then
+            error(('[Croll-Ammo] Box "%s" must define a non-empty rewards table.'):format(boxName))
+        end
+
+        for ammoName, amount in pairs(def.rewards) do
+            if type(ammoName) ~= 'string' or ammoName == '' then
+                error(('[Croll-Ammo] Invalid ammo name in box "%s".'):format(boxName))
+            end
+            if type(amount) == 'number' then
+                local n = math.floor(amount)
+                if n < 1 or n > 10000 then
+                    error(('[Croll-Ammo] Invalid amount in box "%s": ammo=%s amount=%s'):format(boxName, ammoName, tostring(amount)))
+                end
+            elseif type(amount) == 'table' and #amount == 2 then
+                local min = math.floor(tonumber(amount[1]) or -1)
+                local max = math.floor(tonumber(amount[2]) or -1)
+                if min < 1 or max < min or max > 10000 then
+                    error(('[Croll-Ammo] Invalid range in box "%s": ammo=%s range={%s, %s}'):format(
+                        boxName, ammoName, tostring(amount[1]), tostring(amount[2])
+                    ))
+                end
+            else
+                error(('[Croll-Ammo] Invalid reward format in box "%s": ammo=%s (use number or {min, max})'):format(boxName, ammoName))
+            end
+        end
+
+        if def.notifyPhrase ~= nil and type(def.notifyPhrase) ~= 'string' then
+            error(('[Croll-Ammo] notifyPhrase for box "%s" must be a string.'):format(boxName))
+        end
+
+        if def.job ~= nil then
+            if type(def.job) ~= 'string' and type(def.job) ~= 'table' then
+                error(('[Croll-Ammo] job for box "%s" must be a string or table of strings.'):format(boxName))
+            end
+            if type(def.job) == 'table' then
+                for i = 1, #def.job do
+                    if type(def.job[i]) ~= 'string' then
+                        error(('[Croll-Ammo] job[%d] for box "%s" must be a string.'):format(i, boxName))
+                    end
+                end
+            end
+        end
+
+        if def.usetime ~= nil then
+            local ut = tonumber(def.usetime)
+            if not ut or ut < 0 then
+                error(('[Croll-Ammo] usetime for box "%s" must be a positive number.'):format(boxName))
+            end
+        end
+
+        if type(def.notifyPhrase) == 'string' and def.notifyPhrase ~= '' then
+            Config.BoxLabels[boxName] = def.notifyPhrase
+        end
+    end
 end

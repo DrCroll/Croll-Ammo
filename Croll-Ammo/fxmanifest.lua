@@ -4,14 +4,20 @@ lua54 'yes'
 
 name 'Croll-Ammo'
 author 'DrCroll'
-version '1.0.0'
+version '1.1.0'
 
 shared_scripts {
-	'config.lua',
+    'locale/*.lua',
+    'config.lua',
+}
+
+client_scripts {
+    'client/main.lua',
 }
 
 server_scripts {
-	'server/opensource.lua',
-	'server/amounts.lua',
-	'server/main.lua',
+    'opensource/server/version.lua',
+    'opensource/server/opensource.lua',
+    'server/amounts.lua',
+    'server/main.lua',
 }
