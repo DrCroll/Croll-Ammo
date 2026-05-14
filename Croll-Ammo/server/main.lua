@@ -5,6 +5,7 @@
 
 local activeUnpacks = {}
 local pendingRewards = {}
+local ammoBoxes = Config.AmmoBoxes
 
 local function invAddItem(src, name, count, meta)
     return AddItem(src, name, count, meta) == true
@@ -45,21 +46,6 @@ if type(LoadServerAmmoCatalog) ~= 'function' then
     error('[Croll-Ammo] LoadServerAmmoCatalog missing. Ensure `server/amounts.lua` is loaded before server/main.lua.')
 end
 LoadServerAmmoCatalog()
-
-CreateThread(function()
-    Wait(1000)
-    if Config.Inventory ~= 'ox' or GetResourceState('ox_inventory') ~= 'started' then
-        return
-    end
-    for boxName in pairs(Config.AmmoBoxes) do
-        local ok, def = pcall(function()
-            return exports.ox_inventory:Items(boxName)
-        end)
-        if ok and not def then
-            print(('[Croll-Ammo] Item "%s" missing from ox_inventory — add it to data/items.lua (see install/ folder).'):format(boxName))
-        end
-    end
-end)
 
 ---@param v number|number[]|nil
 ---@return number?
@@ -154,15 +140,10 @@ local function isJobAllowed(src, boxDef)
     end
     local playerJob = GetPlayerJob(src)
     if not playerJob then
-        print(('[Croll-Ammo] Job check failed for src=%s — GetPlayerJob returned nil'):format(tostring(src)))
         return false
     end
     if type(jobReq) == 'string' then
-        if playerJob ~= jobReq then
-            print(('[Croll-Ammo] Job mismatch src=%s playerJob="%s" required="%s"'):format(tostring(src), playerJob, jobReq))
-            return false
-        end
-        return true
+        return playerJob == jobReq
     end
     if type(jobReq) == 'table' then
         for i = 1, #jobReq do
@@ -170,9 +151,6 @@ local function isJobAllowed(src, boxDef)
                 return true
             end
         end
-        print(('[Croll-Ammo] Job mismatch src=%s playerJob="%s" required={%s}'):format(
-            tostring(src), playerJob, table.concat(jobReq, ', ')
-        ))
     end
     return false
 end
@@ -304,7 +282,7 @@ exports('openBox', function(a, b, c, d, e)
         return false
     end
 
-    local boxDef = Config.AmmoBoxes[boxName]
+    local boxDef = ammoBoxes[boxName]
     if not boxDef then
         if event == 'usingItem' then
             notify(src, { type = 'error', description = L('unknown_box') })
@@ -363,7 +341,7 @@ local function handleCoreUsableItem(src, boxName, item)
         return
     end
 
-    local boxDef = Config.AmmoBoxes[boxName]
+    local boxDef = ammoBoxes[boxName]
     if not boxDef then
         notify(src, { type = 'error', description = L('unknown_box') })
         return
@@ -423,7 +401,7 @@ CreateThread(function()
     if GetResourceState('ox_inventory') == 'started' then
         return
     end
-    for boxName in pairs(Config.AmmoBoxes) do
+    for boxName in pairs(ammoBoxes) do
         RegisterAmmoUseableItem(boxName, function(source, item)
             handleCoreUsableItem(source, boxName, item)
         end)

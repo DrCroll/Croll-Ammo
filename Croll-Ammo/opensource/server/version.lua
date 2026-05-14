@@ -1,4 +1,4 @@
-local version = '1.0.0'
+local version = '1.1.1'
 local versionUrl = 'https://raw.githubusercontent.com/DrCroll/Croll-Ammo/main/Croll-Ammo/version'
 
 CreateThread(function()

@@ -4,7 +4,7 @@ lua54 'yes'
 
 name 'Croll-Ammo'
 author 'DrCroll'
-version '1.1.0'
+version '1.1.1'
 
 shared_scripts {
     'locale/*.lua',

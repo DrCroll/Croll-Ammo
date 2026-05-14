@@ -24,24 +24,26 @@ RegisterNetEvent('Croll-Ammo:playUnpackAnim', function(usetime)
     end
 
     local endTime = GetGameTimer() + usetime
+    local disableMove = disable and disable.move
+    local disableCar = disable and disable.car
+    local disableCombat = disable and disable.combat
+
     CreateThread(function()
         while GetGameTimer() < endTime do
-            if disable then
-                if disable.move then
-                    DisableControlAction(0, 30, true)
-                    DisableControlAction(0, 31, true)
-                    DisableControlAction(0, 21, true)
-                    DisableControlAction(0, 36, true)
-                end
-                if disable.car then
-                    DisableControlAction(0, 75, true)
-                end
-                if disable.combat then
-                    DisableControlAction(0, 24, true)
-                    DisableControlAction(0, 25, true)
-                    DisableControlAction(0, 47, true)
-                    DisableControlAction(0, 58, true)
-                end
+            if disableMove then
+                DisableControlAction(0, 30, true)
+                DisableControlAction(0, 31, true)
+                DisableControlAction(0, 21, true)
+                DisableControlAction(0, 36, true)
+            end
+            if disableCar then
+                DisableControlAction(0, 75, true)
+            end
+            if disableCombat then
+                DisableControlAction(0, 24, true)
+                DisableControlAction(0, 25, true)
+                DisableControlAction(0, 47, true)
+                DisableControlAction(0, 58, true)
             end
             Wait(0)
         end
